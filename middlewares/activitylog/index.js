@@ -1,11 +1,16 @@
 const removePasswords = (key, value) => (key === 'password' || key === 'token' ? undefined : value)
-
+const ignoreUrls = [
+  'renew-token'
+]
 module.exports = (strapi) => {
   return {
     initialize() {
       strapi.app.use(async (ctx, next) => {
 				await next()
-
+        //
+        if (ignoreUrls.some((urls) => ctx.request.url.includes(urls))) {
+          return
+        }
 				const entry = JSON.parse(JSON.stringify({
 					username: ctx.state.user ? ctx.state.user.email : 'public',
 					user: ctx.state.user ? ctx.state.user.id : null,
@@ -14,7 +19,7 @@ module.exports = (strapi) => {
 					route: ctx.path,
 					params: ctx.params,
 					query: ctx.request.query,
-					body: {}, //ctx.request.body,
+					body: ctx.request.body,
 					adminActivity: !Object.keys(strapi.api).some(endpoint => endpoint.startsWith(ctx.path.split('/')[1]))
 				}, removePasswords))
 
